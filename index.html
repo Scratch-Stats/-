@@ -4,114 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="i0I6e6O3z9TJXkasg6pHVIOikbaQTwv7cB6jdMHUvQs" />
-    <title>Scratch Stats</title>
-
-    <!-- CSS -->
+    <title>Scratch Statistics Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-
 <body>
-
-    <!-- ========================= -->
-    <!-- Header / Navbar -->
-    <!-- ========================= -->
-    <header>
-        <h1>Scratch Stats</h1>
-        <nav>
-            <button id="loginBtn">Login</button>
-            <button id="logoutBtn" style="display:none;">Logout</button>
-        </nav>
-    </header>
-
-    <!-- ========================= -->
-    <!-- Main Content -->
-    <!-- ========================= -->
-    <main>
-
-        <!-- Stats Section -->
-        <section id="statsSection">
-            <h2>Global Scratch Stats</h2>
-            <div class="stats-grid">
-                <div class="stat-card"><span id="totalUsers"></span> Users</div>
-                <div class="stat-card"><span id="totalProjects"></span> Projects</div>
-                <div class="stat-card"><span id="totalStudios"></span> Studios</div>
-                <div class="stat-card"><span id="totalComments"></span> Comments</div>
-            </div>
-        </section>
-
-        <!-- Search Section -->
-        <section id="searchSection">
-            <h2>Search Scratch</h2>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📊 Scratch Stats</h1>
+            
             <div class="search-wrapper">
-                <input id="searchInput" placeholder="Search projects or users...">
-                <button onclick="performSearch()">Search</button>
-                <div id="searchSuggestions" class="suggestions"></div>
+                <div class="search-box-container">
+                    <div class="search-input-group">
+                        <i class="fas fa-search search-icon"></i>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Search projects, users, or studios..."
+                            autocomplete="off"
+                        >
+                        <div class="search-filter-toggle">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                    </div>
+                    <div id="searchSuggestions" class="search-suggestions" style="display:none;"></div>
+                </div>
+                <div class="search-filters" style="display:none;">
+                    <label class="filter-option">
+                        <input type="radio" name="searchType" value="all" checked> All
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="searchType" value="projects"> Projects
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="searchType" value="users"> Users
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="searchType" value="studios"> Studios
+                    </label>
+                </div>
             </div>
-        </section>
-
-        <!-- Featured Content -->
-        <section id="featuredSection">
-            <h2>Featured Content</h2>
-
-            <h3>Projects</h3>
-            <div id="featuredProjects" class="featured-grid"></div>
-
-            <h3>Studios</h3>
-            <div id="featuredStudios" class="featured-grid"></div>
-
-            <h3>Users</h3>
-            <div id="featuredUsers" class="featured-grid"></div>
-        </section>
-
-        <!-- ========================= -->
-<!-- Leaderboard -->
-<!-- ========================= -->
-<section id="leaderboardSection">
-    <h2>Top Scratch Users</h2>
-    <p class="section-description">Most popular users ranked by followers</p>
-
-    <div id="leaderboardList" class="leaderboard-grid">
-        <!-- Filled by JS -->
-    </div>
-</section>
-
-        <!-- Admin Panel -->
-        <section id="adminPanel" style="display:none;">
-            <h2>Admin Panel</h2>
-
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="tabFeatured">Featured</button>
-                <button class="tab-btn" data-tab="tabVerified">Verified</button>
-                <button class="tab-btn" data-tab="tabRequests">Requests</button>
+            
+            <div class="nav-buttons">
+                <button id="loginBtn" class="btn btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button id="logoutBtn" class="btn btn-logout" style="display:none;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
-
-            <!-- Tab Content -->
-            <div id="tabFeatured" class="tab-content active">
-                <h3>Manage Featured</h3>
-                <div id="manageFeaturedProjects"></div>
-                <div id="manageFeaturedStudios"></div>
-                <div id="manageFeaturedUsers"></div>
-            </div>
-
-            <div id="tabVerified" class="tab-content">
-                <h3>Verified Users</h3>
-                <div id="verifiedUsersList"></div>
-            </div>
-
-            <div id="tabRequests" class="tab-content">
-                <h3>Pending Requests</h3>
-                <div id="pendingVerifyList"></div>
-                <div id="pendingAdminList"></div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ========================= -->
-    <!-- Modals -->
-    <!-- ========================= -->
+        </div>
+    </nav>
 
     <!-- Login Modal -->
     <div id="loginModal" class="modal">
@@ -119,40 +63,141 @@
             <span class="close">&times;</span>
             <h2>Admin Login</h2>
             <form id="loginForm">
-                <input id="username" placeholder="Username">
-                <input id="password" type="password" placeholder="Password">
-                <div id="loginError" class="error"></div>
-                <button type="submit">Login</button>
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit" class="btn btn-primary">Login</button>
             </form>
+            <p id="loginError" class="error"></p>
         </div>
     </div>
 
-    <!-- Search Modal -->
-    <div id="searchModal" class="modal">
-        <div class="modal-content">
-            <span onclick="closeSearchModal()" class="close">&times;</span>
-            <div id="searchResults"></div>
+    <!-- Search Results Modal -->
+    <div id="searchModal" class="modal search-modal">
+        <div class="modal-content search-modal-content">
+            <div class="search-modal-header">
+                <h2>Search Results</h2>
+                <button class="close-btn" onclick="closeSearchModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
         </div>
     </div>
 
-    <!-- Request Modal -->
-    <div id="requestModal" class="modal">
-        <div class="modal-content">
-            <span class="close-request">&times;</span>
-            <h2 id="requestTitle"></h2>
-            <form id="requestForm">
-                <input id="requestUsername" placeholder="Your Scratch Username">
-                <textarea id="requestReason" placeholder="Why?"></textarea>
-                <input id="passwordField" type="password" placeholder="Admin Password" style="display:none;">
-                <button type="submit">Submit Request</button>
-            </form>
-        </div>
+    <!-- Main Dashboard -->
+    <div class="container">
+        <!-- Public Stats Section -->
+        <section id="publicStats" class="stats-section">
+            <h2>Live Scratch Community Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <p class="stat-value" id="totalUsers">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Projects</h3>
+                    <p class="stat-value" id="totalProjects">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Studios</h3>
+                    <p class="stat-value" id="totalStudios">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Comments</h3>
+                    <p class="stat-value" id="totalComments">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Content Section -->
+        <section class="featured-section">
+            <h2>✨ Featured Content</h2>
+            
+            <div class="featured-subsection">
+                <h3>Featured Projects</h3>
+                <div id="featuredProjects" class="featured-grid"></div>
+            </div>
+
+            <div class="featured-subsection">
+                <h3>Featured Studios</h3>
+                <div id="featuredStudios" class="featured-grid"></div>
+            </div>
+
+            <div class="featured-subsection">
+                <h3>Featured Users</h3>
+                <div id="featuredUsers" class="featured-grid"></div>
+            </div>
+        </section>
+
+        <!-- Admin Panel -->
+        <section id="adminPanel" class="admin-panel" style="display:none;">
+            <h2>👨‍💻 Admin Control Panel</h2>
+            <p class="admin-badge">✅ <strong>Verified Developer</strong></p>
+            
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="verify">Verify Users</button>
+                <button class="tab-btn" data-tab="feature">Feature Content</button>
+                <button class="tab-btn" data-tab="manage">Manage Featured</button>
+            </div>
+
+            <!-- Verify Users Tab -->
+            <div id="verify" class="tab-content active">
+                <h3>Verify Users</h3>
+                <div class="form-group">
+                    <input type="text" id="verifyUsername" placeholder="Enter username to verify">
+                    <button class="btn btn-primary" onclick="verifyUser()">Verify User</button>
+                </div>
+                <div id="verifiedUsersList" class="list"></div>
+            </div>
+
+            <!-- Feature Content Tab -->
+            <div id="feature" class="tab-content">
+                <h3>Feature Content</h3>
+                
+                <div class="feature-form">
+                    <h4>Feature a Project</h4>
+                    <input type="text" id="projectId" placeholder="Project ID or URL">
+                    <input type="text" id="projectTitle" placeholder="Project Title">
+                    <button class="btn btn-primary" onclick="featureProject()">Feature Project</button>
+                </div>
+
+                <div class="feature-form">
+                    <h4>Feature a Studio</h4>
+                    <input type="text" id="studioId" placeholder="Studio ID or URL">
+                    <input type="text" id="studioTitle" placeholder="Studio Title">
+                    <button class="btn btn-primary" onclick="featureStudio()">Feature Studio</button>
+                </div>
+
+                <div class="feature-form">
+                    <h4>Feature a User</h4>
+                    <input type="text" id="userId" placeholder="Username">
+                    <button class="btn btn-primary" onclick="featureUser()">Feature User</button>
+                </div>
+            </div>
+
+            <!-- Manage Featured Tab -->
+            <div id="manage" class="tab-content">
+                <h3>Manage Featured Content</h3>
+                
+                <div class="manage-section">
+                    <h4>Featured Projects</h4>
+                    <div id="manageFeaturedProjects" class="manage-list"></div>
+                </div>
+
+                <div class="manage-section">
+                    <h4>Featured Studios</h4>
+                    <div id="manageFeaturedStudios" class="manage-list"></div>
+                </div>
+
+                <div class="manage-section">
+                    <h4>Featured Users</h4>
+                    <div id="manageFeaturedUsers" class="manage-list"></div>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <!-- ========================= -->
-    <!-- Scripts -->
-    <!-- ========================= -->
+    <script src="auth.js"></script>
     <script src="script.js"></script>
-
 </body>
 </html>
