@@ -1,61 +1,31 @@
-// =========================
-// Global State
-// =========================
-
+// Global state
 let isLoggedIn = false;
 let currentUser = null;
-const adminUsername = "Duke_Scratch56";
+const adminUsername = 'Admin1';
 
-// Backend URL
-const BACKEND = "https://scratch-stats-backend.onrender.com";
-
-// =========================
-// Admin Token Headers
-// =========================
-const adminHeaders = {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer " + sessionStorage.getItem("adminToken")
-};
-
-
-// Local storage data
+// Mock data storage
 let appData = {
     verifiedUsers: [],
     featuredProjects: [],
     featuredStudios: [],
-    featuredUsers: [],
-    pendingVerify: [],
-    pendingAdmin: [],
-    adminAccounts: []
+    featuredUsers: []
 };
 
-// =========================
-// Load & Save
-// =========================
-
+// Load data from localStorage
 function loadData() {
-    const saved = localStorage.getItem("scratchStatsData");
+    const saved = localStorage.getItem('scratchStatsData');
     if (saved) {
         appData = JSON.parse(saved);
-        appData.pendingVerify ||= [];
-        appData.pendingAdmin ||= [];
-        appData.adminAccounts ||= [];
-        appData.verifiedUsers ||= [];
-        appData.featuredProjects ||= [];
-        appData.featuredStudios ||= [];
-        appData.featuredUsers ||= [];
     }
 }
 
+// Save data to localStorage
 function saveData() {
-    localStorage.setItem("scratchStatsData", JSON.stringify(appData));
+    localStorage.setItem('scratchStatsData', JSON.stringify(appData));
 }
 
-// =========================
-// Init
-// =========================
-
-document.addEventListener("DOMContentLoaded", () => {
+// Initialize app
+document.addEventListener('DOMContentLoaded', function() {
     loadData();
     setupEventListeners();
     loadPublicStats();
@@ -63,794 +33,390 @@ document.addEventListener("DOMContentLoaded", () => {
     checkSession();
 });
 
-// =========================
-// Event Listeners
-// =========================
-
+// Setup event listeners
 function setupEventListeners() {
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const loginModal = document.getElementById("loginModal");
-    const closeBtn = document.querySelector(".close");
-    const loginForm = document.getElementById("loginForm");
+    // Login modal
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginModal = document.getElementById('loginModal');
+    const closeBtn = document.querySelector('.close');
+    const loginForm = document.getElementById('loginForm');
 
-    if (loginBtn) loginBtn.addEventListener("click", () => loginModal.style.display = "block");
-    if (logoutBtn) logoutBtn.addEventListener("click", logout);
-    if (closeBtn) closeBtn.addEventListener("click", () => loginModal.style.display = "none");
-
-    window.addEventListener("click", (e) => {
-        if (e.target === loginModal) loginModal.style.display = "none";
+    loginBtn.addEventListener('click', () => {
+        loginModal.style.display = 'block';
     });
 
-    if (loginForm) loginForm.addEventListener("submit", handleLogin);
+    logoutBtn.addEventListener('click', logout);
 
-    // Tabs
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.addEventListener("click", switchTab);
+    closeBtn.addEventListener('click', () => {
+        loginModal.style.display = 'none';
     });
 
-    // Search
-    const searchInput = document.getElementById("searchInput");
-    const searchWrapper = document.querySelector(".search-wrapper");
-    const searchFilterToggle = document.querySelector(".search-filter-toggle");
-    const searchFilters = document.querySelector(".search-filters");
+    window.addEventListener('click', (e) => {
+        if (e.target === loginModal) {
+            loginModal.style.display = 'none';
+        }
+    });
 
-    if (searchFilterToggle && searchFilters) {
-        searchFilterToggle.addEventListener("click", (e) => {
-            e.stopPropagation();
-            searchFilters.style.display =
-                searchFilters.style.display === "none" ? "block" : "none";
-        });
-    }
+    loginForm.addEventListener('submit', handleLogin);
 
-    if (searchWrapper) {
-        document.addEventListener("click", (e) => {
-            if (!searchWrapper.contains(e.target)) {
-                if (searchFilters) searchFilters.style.display = "none";
-                const suggestionsDiv = document.getElementById("searchSuggestions");
-                if (suggestionsDiv) suggestionsDiv.style.display = "none";
-            }
-        });
-    }
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', switchTab);
+    });
 
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener("input", () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(updateSearchSuggestions, 300);
-        });
+    // Search functionality
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
 
-        searchInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                performSearch();
-            }
-        });
-
-        searchInput.addEventListener("focus", () => {
-            const suggestionsDiv = document.getElementById("searchSuggestions");
-            if (suggestionsDiv && searchInput.value.length > 0) {
-                updateSearchSuggestions();
-            }
-        });
-    }
-
-    // Request modal buttons (if present)
-    const closeRequest = document.querySelector(".close-request");
-    const requestVerifyBtn = document.getElementById("requestVerifyBtn");
-    const requestAdminBtn = document.getElementById("requestAdminBtn");
-    const requestForm = document.getElementById("requestForm");
-
-    if (closeRequest) {
-        closeRequest.addEventListener("click", () => {
-            document.getElementById("requestModal").style.display = "none";
-        });
-    }
-
-    if (requestVerifyBtn) {
-        requestVerifyBtn.addEventListener("click", () => openRequestModal("verify"));
-    }
-
-    if (requestAdminBtn) {
-        requestAdminBtn.addEventListener("click", () => openRequestModal("admin"));
-    }
-
-    if (requestForm) {
-        requestForm.addEventListener("submit", handleRequestForm);
-    }
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
 }
 
-// =========================
-// Search Suggestions
-// =========================
-
-async function updateSearchSuggestions() {
-    const query = document.getElementById("searchInput").value.trim();
-    const suggestionsDiv = document.getElementById("searchSuggestions");
-
-    if (!query || query.length < 2) {
-        if (suggestionsDiv) suggestionsDiv.style.display = "none";
+// Perform search
+async function performSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    
+    if (!query) {
+        alert('Please enter a search term');
         return;
     }
 
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '<p class="loading">Searching...</p>';
+    document.getElementById('searchModal').style.display = 'block';
+
     try {
-        const res = await fetch(`${BACKEND}/api/search/projects?q=${encodeURIComponent(query)}&limit=3`);
-        const data = await res.json();
+        // Search for projects
+        const projectsResponse = await fetch(`https://api.scratch.mit.edu/search/projects?q=${encodeURIComponent(query)}&limit=5`);
+        const projectsData = await projectsResponse.json();
 
-        let html = "";
-        data.slice(0, 3).forEach(project => {
-            const title = project.title || "Untitled";
-            html += `
-                <div class="suggestion-item" onclick="selectSuggestion('${title.replace(/'/g, "\\'")}')"> 
-                    <i class="fas fa-project-diagram"></i> ${title}
-                </div>`;
-        });
+        // Search for users
+        const usersResponse = await fetch(`https://api.scratch.mit.edu/search/users?q=${encodeURIComponent(query)}&limit=5`);
+        const usersData = await usersResponse.json();
 
-        if (suggestionsDiv) {
-            suggestionsDiv.innerHTML = html;
-            suggestionsDiv.style.display = html ? "block" : "none";
+        let html = '';
+
+        // Display projects
+        if (projectsData && projectsData.length > 0) {
+            html += '<h3>Projects</h3><div class="search-results-list">';
+            projectsData.forEach(project => {
+                html += `
+                    <div class="search-result-item">
+                        <h4>${project.title}</h4>
+                        <p>By <strong>@${project.creator.username}</strong></p>
+                        <p>❤️ ${project.stats.favorites} | 💬 ${project.stats.comments}</p>
+                        <a href="https://scratch.mit.edu/projects/${project.id}/" target="_blank" class="result-link">View Project →</a>
+                    </div>
+                `;
+            });
+            html += '</div>';
         }
 
-    } catch (err) {
-        console.error("Error fetching suggestions:", err);
-        if (suggestionsDiv) suggestionsDiv.style.display = "none";
+        // Display users
+        if (usersData && usersData.length > 0) {
+            html += '<h3>Users</h3><div class="search-results-list">';
+            usersData.forEach(user => {
+                html += `
+                    <div class="search-result-item">
+                        <h4>@${user.username}</h4>
+                        <p>ID: ${user.id}</p>
+                        <a href="https://scratch.mit.edu/users/${user.username}/" target="_blank" class="result-link">View Profile →</a>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        if (!projectsData || projectsData.length === 0 && (!usersData || usersData.length === 0)) {
+            html = '<p class="no-results">No results found for "' + query + '"</p>';
+        }
+
+        searchResults.innerHTML = html;
+    } catch (error) {
+        console.error('Search error:', error);
+        searchResults.innerHTML = '<p class="error">Error performing search. Please try again.</p>';
     }
 }
 
-function selectSuggestion(s) {
-    document.getElementById("searchInput").value = s;
-    const suggestionsDiv = document.getElementById("searchSuggestions");
-    if (suggestionsDiv) suggestionsDiv.style.display = "none";
-    performSearch();
-}
-
-// =========================
-// Search
-// =========================
-
-async function performSearch() {
-    const query = document.getElementById("searchInput").value.trim();
-    if (!query) return alert("Please enter a search term");
-
-    const searchResults = document.getElementById("searchResults");
-    if (!searchResults) return;
-    
-    searchResults.innerHTML = "<p class='loading'>🔍 Searching...</p>";
-    document.getElementById("searchModal").style.display = "block";
-
-    try {
-        const [projectsRes, usersRes] = await Promise.all([
-            fetch(`${BACKEND}/api/search/projects?q=${encodeURIComponent(query)}&limit=5`),
-            fetch(`${BACKEND}/api/search/users?q=${encodeURIComponent(query)}&limit=5`)
-        ]);
-
-        const projects = await projectsRes.json();
-        const users = await usersRes.json();
-
-        let html = "";
-
-        // Projects
-        if (projects.length > 0) {
-            html += `<h3>🎮 Projects</h3><div class="search-results-list">`;
-            projects.forEach(p => {
-                html += `
-                    <div class="search-result-item">
-                        <h4>${p.title || "Untitled"}</h4>
-                        <p>By <strong>@${p.creator?.username || "Unknown"}</strong></p>
-                        <p>❤️ ${p.stats?.favorites || 0} | 💬 ${p.stats?.comments || 0}</p>
-                        <a href="https://scratch.mit.edu/projects/${p.id}/" target="_blank" class="result-link">View Project →</a>
-                    </div>`;
-            });
-            html += `</div>`;
-        }
-
-        // Users
-        if (users.length > 0) {
-            html += `<h3>👥 Users</h3><div class="search-results-list">`;
-            users.forEach(u => {
-                html += `
-                    <div class="search-result-item">
-                        <h4>@${u.username}</h4>
-                        <p>ID: ${u.id}</p>
-                        <a href="https://scratch.mit.edu/users/${u.username}/" target="_blank" class="result-link">View Profile →</a>
-                    </div>`;
-            });
-            html += `</div>`;
-        }
-
-        searchResults.innerHTML = html || `<p class="no-results">No results found for "${query}"</p>`;
-
-    } catch (err) {
-        console.error("Search error:", err);
-        searchResults.innerHTML = "<p class='error'>❌ Error performing search.</p>";
-    }
-}
-
+// Close search modal
 function closeSearchModal() {
-    document.getElementById("searchModal").style.display = "none";
+    document.getElementById('searchModal').style.display = 'none';
 }
 
-// =========================
-// Login
-// =========================
-
-async function handleLogin(e) {
+// Handle login
+function handleLogin(e) {
     e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const errorDiv = document.getElementById("loginError");
-
-    try {
-        const res = await fetch(`${BACKEND}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            if (errorDiv) {
-                errorDiv.textContent = "Invalid username or password";
-                errorDiv.style.display = "block";
-            }
-            return;
-        }
-
-        sessionStorage.setItem("adminToken", data.token);
+    if (username === adminUsername && password === 'Scratch@Admin2024!Secure') {
         isLoggedIn = true;
         currentUser = username;
-
+        createSession();
+        document.getElementById('loginModal').style.display = 'none';
         updateUIState();
         loadAdminPanel();
-        document.getElementById("loginModal").style.display = "none";
-
-    } catch (err) {
-        if (errorDiv) {
-            errorDiv.textContent = "Login error";
-            errorDiv.style.display = "block";
-        }
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        errorDiv.style.display = 'none';
+    } else {
+        errorDiv.textContent = 'Invalid username or password';
+        errorDiv.style.display = 'block';
     }
 }
 
-
+// Logout
 function logout() {
     isLoggedIn = false;
     currentUser = null;
     clearSession();
     updateUIState();
-    const adminPanel = document.getElementById("adminPanel");
-    if (adminPanel) adminPanel.style.display = "none";
+    document.getElementById('adminPanel').style.display = 'none';
 }
 
+// Update UI state based on login
 function updateUIState() {
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const adminPanel = document.getElementById("adminPanel");
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const adminPanel = document.getElementById('adminPanel');
 
-    if (loginBtn) loginBtn.style.display = isLoggedIn ? "none" : "block";
-    if (logoutBtn) logoutBtn.style.display = isLoggedIn ? "block" : "none";
-    if (adminPanel) adminPanel.style.display = isLoggedIn ? "block" : "none";
-}
-
-function checkSession() {
-    const session = sessionStorage.getItem("adminSession");
-    if (!session) return;
-
-    const data = JSON.parse(session);
-    if (new Date(data.expiry) > new Date()) {
-        isLoggedIn = true;
-        currentUser = data.username;
-        updateUIState();
-        loadAdminPanel();
+    if (isLoggedIn) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        adminPanel.style.display = 'block';
     } else {
-        clearSession();
+        loginBtn.style.display = 'block';
+        logoutBtn.style.display = 'none';
+        adminPanel.style.display = 'none';
     }
 }
 
-// =========================
-// Stats
-// =========================
+// Check if session is still valid
+function checkSession() {
+    const session = sessionStorage.getItem('adminSession');
+    if (session) {
+        const sessionData = JSON.parse(session);
+        if (new Date(sessionData.expiry) > new Date()) {
+            isLoggedIn = true;
+            currentUser = sessionData.username;
+            updateUIState();
+            loadAdminPanel();
+        } else {
+            clearSession();
+        }
+    }
+}
 
-function loadPublicStats() {
+// Load public statistics
+async function loadPublicStats() {
     try {
+        // Mock data - in production, this would call the Scratch API
         const stats = {
-            users: 250000000 + Math.floor(Math.random() * 50000000),
-            projects: 180000000 + Math.floor(Math.random() * 30000000),
-            studios: 8000000 + Math.floor(Math.random() * 2000000),
-            comments: 580000000 + Math.floor(Math.random() * 100000000)
+            users: Math.floor(Math.random() * 100000000) + 50000000,
+            projects: Math.floor(Math.random() * 50000000) + 25000000,
+            studios: Math.floor(Math.random() * 5000000) + 1000000,
+            comments: Math.floor(Math.random() * 200000000) + 100000000
         };
 
-        const totalUsersEl = document.getElementById("totalUsers");
-        const totalProjectsEl = document.getElementById("totalProjects");
-        const totalStudiosEl = document.getElementById("totalStudios");
-        const totalCommentsEl = document.getElementById("totalComments");
-
-        if (totalUsersEl) totalUsersEl.textContent = stats.users.toLocaleString();
-        if (totalProjectsEl) totalProjectsEl.textContent = stats.projects.toLocaleString();
-        if (totalStudiosEl) totalStudiosEl.textContent = stats.studios.toLocaleString();
-        if (totalCommentsEl) totalCommentsEl.textContent = stats.comments.toLocaleString();
-
-    } catch (err) {
-        console.error("Error loading stats:", err);
+        document.getElementById('totalUsers').textContent = stats.users.toLocaleString();
+        document.getElementById('totalProjects').textContent = stats.projects.toLocaleString();
+        document.getElementById('totalStudios').textContent = stats.studios.toLocaleString();
+        document.getElementById('totalComments').textContent = stats.comments.toLocaleString();
+    } catch (error) {
+        console.error('Error loading stats:', error);
     }
 }
 
-// =========================
-// Featured Content
-// =========================
+// Load featured content with clickable links
+function loadFeaturedContent() {
+    const projectsDiv = document.getElementById('featuredProjects');
+    const studiosDiv = document.getElementById('featuredStudios');
+    const usersDiv = document.getElementById('featuredUsers');
 
-async function loadFeaturedContent() {
-    try {
-        const res = await fetch(`${BACKEND}/featured`);
-        const data = await res.json();
+    projectsDiv.innerHTML = appData.featuredProjects.map(p => 
+        `<a href="https://scratch.mit.edu/projects/${p.id}/" target="_blank" class="featured-item featured-link"><strong>${p.title}</strong><p>ID: ${p.id}</p></a>`
+    ).join('') || '<p style="color:#999;">No featured projects yet</p>';
 
-        appData.featuredProjects = data.featuredProjects || [];
-        appData.featuredStudios = data.featuredStudios || [];
-        appData.featuredUsers = data.featuredUsers || [];
+    studiosDiv.innerHTML = appData.featuredStudios.map(s => 
+        `<a href="https://scratch.mit.edu/studios/${s.id}/" target="_blank" class="featured-item featured-link"><strong>${s.title}</strong><p>ID: ${s.id}</p></a>`
+    ).join('') || '<p style="color:#999;">No featured studios yet</p>';
 
-        renderFeaturedContent();
-        loadManagedFeatured();
-    } catch (err) {
-        console.error("Error loading featured content:", err);
-    }
+    usersDiv.innerHTML = appData.featuredUsers.map(u => 
+        `<a href="https://scratch.mit.edu/users/${u.username}/" target="_blank" class="featured-item featured-link"><strong>@${u.username}</strong><p>✓ Verified</p></a>`
+    ).join('') || '<p style="color:#999;">No featured users yet</p>';
 }
 
-// =========================
-// Admin Panel (Backend Only)
-// =========================
-
+// Load admin panel
 function loadAdminPanel() {
     loadVerifiedUsers();
     loadManagedFeatured();
-    loadPendingRequests();
 }
 
-// =========================
-// Rank Helpers
-// =========================
-
-function getCurrentRank() {
-    if (!currentUser) return null;
-    if (currentUser === adminUsername) return "Owner";
-
-    return appData.adminAccounts.find(a => a.username === currentUser)?.rank || null;
-}
-
-function requireRank(allowedRanks, actionName) {
-    const rank = getCurrentRank();
-    if (!rank || !allowedRanks.includes(rank)) {
-        alert(`You do not have permission to ${actionName}.`);
-        return false;
-    }
-    return true;
-}
-
-// =========================
-// Verified Users (Backend)
-// =========================
-
-async function loadVerifiedUsers() {
-    try {
-        const res = await fetch(`${BACKEND}/verified`);
-        const data = await res.json();
-        appData.verifiedUsers = data.verifiedUsers || [];
-
-        const list = document.getElementById("verifiedUsersList");
-        if (!list) return;
-
-        list.innerHTML =
-            appData.verifiedUsers.map(user =>
-                `<div class="list-item">
-                    <span>✓ @${user}</span>
-                    <button class="btn btn-danger" onclick="unverifyUser('${user}')">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No verified users yet</p>`;
-    } catch (err) {
-        console.error("Error loading verified users:", err);
-    }
-}
-
-async function verifyUser() {
-    if (!requireRank(["Owner", "Admin", "Moderator"], "verify users")) return;
-
-    const verifyUsernameEl = document.getElementById("verifyUsername");
-    if (!verifyUsernameEl) return alert("Verify username field not found");
-    
-    const username = verifyUsernameEl.value.trim();
-    if (!username) return alert("Enter a username");
-
-    await fetch(`${BACKEND}/verified/add`, {
-        method: "POST",
-        headers: adminHeaders,
-        body: JSON.stringify({ username })
-    });
-
-    loadVerifiedUsers();
-    verifyUsernameEl.value = "";
-}
-
-async function unverifyUser(username) {
-    if (!requireRank(["Owner", "Admin"], "remove verified users")) return;
-
-    await fetch(`${BACKEND}/verified/remove`, {
-        method: "POST",
-        headers: adminHeaders,
-        body: JSON.stringify({ username })
-    });
-
-    loadVerifiedUsers();
-}
-
-// =========================
-// Featured Content (Backend)
-// =========================
-
-async function featureProject() {
-    if (!requireRank(["Owner", "Admin"], "feature projects")) return;
-
-    const projectIdEl = document.getElementById("projectId");
-    const projectTitleEl = document.getElementById("projectTitle");
-    
-    if (!projectIdEl || !projectTitleEl) return alert("Project form fields not found");
-    
-    const id = projectIdEl.value.trim();
-    const title = projectTitleEl.value.trim();
-    if (!id || !title) return alert("Enter ID and title");
-
-    await fetch(`${BACKEND}/featured/add`, {
-        method: "POST",
-        headers: adminHeaders,
-        body: JSON.stringify({
-            type: "projects",
-            item: { id, title }
-        })
-    });
-
-    loadFeaturedContent();
-    projectIdEl.value = "";
-    projectTitleEl.value = "";
-}
-
-async function featureStudio() {
-    if (!requireRank(["Owner", "Admin"], "feature studios")) return;
-
-    const studioIdEl = document.getElementById("studioId");
-    const studioTitleEl = document.getElementById("studioTitle");
-    
-    if (!studioIdEl || !studioTitleEl) return alert("Studio form fields not found");
-    
-    const id = studioIdEl.value.trim();
-    const title = studioTitleEl.value.trim();
-    if (!id || !title) return alert("Enter ID and title");
-
-    await fetch(`${BACKEND}/featured/add`, {
-        method: "POST",
-        headers: adminHeaders,
-        body: JSON.stringify({
-            type: "studios",
-            item: { id, title }
-        })
-    });
-
-    loadFeaturedContent();
-    studioIdEl.value = "";
-    studioTitleEl.value = "";
-}
-
-async function featureUser() {
-    if (!requireRank(["Owner", "Admin"], "feature users")) return;
-
-    const userIdEl = document.getElementById("userId");
-    if (!userIdEl) return alert("User field not found");
-    
-    const username = userIdEl.value.trim();
-    if (!username) return alert("Enter username");
-
-    await fetch(`${BACKEND}/featured/add`, {
-        method: "POST",
-        headers: adminHeaders,
-        body: JSON.stringify({
-            type: "users",
-            item: { username }
-        })
-    });
-
-    loadFeaturedContent();
-    userIdEl.value = "";
-}
-
-async function removeFeature(type, index) {
-    if (!requireRank(["Owner", "Admin"], "remove featured content")) return;
-
-    await fetch(`${BACKEND}/featured/remove`, {
-        method: "POST",
-        headers: adminHeaders,
-        body: JSON.stringify({ type, index })
-    });
-
-    loadFeaturedContent();
-}
-
-function loadManagedFeatured() {
-    const projectsDiv = document.getElementById("manageFeaturedProjects");
-    const studiosDiv = document.getElementById("manageFeaturedStudios");
-    const usersDiv = document.getElementById("manageFeaturedUsers");
-
-    if (projectsDiv) {
-        projectsDiv.innerHTML =
-            appData.featuredProjects.map((p, i) =>
-                `<div class="manage-item">
-                    <span>${p.title}</span>
-                    <button class="btn btn-danger" onclick="removeFeature('projects', ${i})">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No featured projects</p>`;
-    }
-
-    if (studiosDiv) {
-        studiosDiv.innerHTML =
-            appData.featuredStudios.map((s, i) =>
-                `<div class="manage-item">
-                    <span>${s.title}</span>
-                    <button class="btn btn-danger" onclick="removeFeature('studios', ${i})">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No featured studios</p>`;
-    }
-
-    if (usersDiv) {
-        usersDiv.innerHTML =
-            appData.featuredUsers.map((u, i) =>
-                `<div class="manage-item">
-                    <span>@${u.username}</span>
-                    <button class="btn btn-danger" onclick="removeFeature('users', ${i})">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No featured users</p>`;
-    }
-}
-
-// =========================
-// Tabs
-// =========================
-
-function switchTab(e) {
-    const tabName = e.target.getAttribute("data-tab");
-
-    document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
-
-    e.target.classList.add("active");
-    const tabContent = document.getElementById(tabName);
-    if (tabContent) tabContent.classList.add("active");
-}
-
-// =========================
-// Session
-// =========================
-
-function createSession() {
-    const session = {
-        username: currentUser,
-        expiry: new Date(Date.now() + 24 * 60 * 60 * 1000)
-    };
-    sessionStorage.setItem("adminSession", JSON.stringify(session));
-}
-
-function clearSession() {
-    sessionStorage.removeItem("adminSession");
-}
-
-// =========================
-// Request Modal
-// =========================
-
-function openRequestModal(type) {
-    const modal = document.getElementById("requestModal");
-    const title = document.getElementById("requestTitle");
-    const passwordField = document.getElementById("passwordField");
-
-    if (!modal || !title) return;
-
-    modal.style.display = "block";
-
-    if (type === "verify") {
-        title.textContent = "Request Verification";
-        if (passwordField) passwordField.style.display = "none";
-        modal.setAttribute("data-type", "verify");
-    } else {
-        title.textContent = "Request Admin Access";
-        if (passwordField) passwordField.style.display = "block";
-        modal.setAttribute("data-type", "admin");
-    }
-}
-
-// =========================
-// Request Form Handling
-// =========================
-
-function handleRequestForm(e) {
-    e.preventDefault();
-
-    const modal = document.getElementById("requestModal");
-    if (!modal) return;
-    
-    const type = modal.getAttribute("data-type");
-    const username = document.getElementById("requestUsername").value.trim();
-    const reason = document.getElementById("requestReason").value.trim();
-    const passwordField = document.getElementById("passwordField");
-    const password = passwordField ? passwordField.value.trim() : "";
-
-    if (!username || !reason || (type === "admin" && !password)) {
-        alert("Please fill out all required fields.");
+// Verify user
+function verifyUser() {
+    const username = document.getElementById('verifyUsername').value.trim();
+    if (!username) {
+        alert('Please enter a username');
         return;
     }
 
-    if (type === "verify") {
-        appData.pendingVerify.push({ username, reason });
-        alert("Your verification request has been sent!");
+    if (!appData.verifiedUsers.includes(username)) {
+        appData.verifiedUsers.push(username);
+        saveData();
+        document.getElementById('verifyUsername').value = '';
+        loadVerifiedUsers();
+        alert(`✓ ${username} has been verified!`);
     } else {
-        appData.pendingAdmin.push({
-            username,
-            password: btoa(password),
-            reason,
-            rank: "Admin"
-        });
-        alert("Your admin request has been sent!");
-    }
-
-    saveData();
-    modal.style.display = "none";
-    const requestForm = document.getElementById("requestForm");
-    if (requestForm) requestForm.reset();
-    loadPendingRequests();
-}
-
-// =========================
-// Pending Requests (Cards)
-// =========================
-
-function loadPendingRequests() {
-    const adminDiv = document.getElementById("pendingAdminList");
-    const verifyDiv = document.getElementById("pendingVerifyList");
-
-    if (!adminDiv && !verifyDiv) return;
-
-    // Verify Requests
-    if (verifyDiv) {
-        verifyDiv.innerHTML = appData.pendingVerify.length > 0
-            ? appData.pendingVerify.map((req, i) =>
-                `<div class="pending-card">
-                    <div class="pending-info">
-                        <strong>@${req.username}</strong>
-                        <span class="pending-reason">"${req.reason}"</span>
-                    </div>
-                    <div class="pending-actions">
-                        <button class="btn btn-approve" onclick="approveVerify(${i})">
-                            Approve
-                        </button>
-                        <button class="btn btn-deny" onclick="denyVerify(${i})">
-                            Deny
-                        </button>
-                    </div>
-                </div>`
-            ).join("")
-            : '<p style="color:#999;">No pending verification requests</p>';
-    }
-
-    // Admin Requests
-    if (adminDiv) {
-        adminDiv.innerHTML = appData.pendingAdmin.length > 0
-            ? appData.pendingAdmin.map((req, i) =>
-                `<div class="pending-card">
-                    <div class="pending-info">
-                        <strong>@${req.username}</strong>
-                        <span class="pending-reason">"${req.reason}"</span>
-                    </div>
-                    <div class="pending-actions">
-                        <button class="btn btn-approve" onclick="approveAdmin(${i})">
-                            Approve
-                        </button>
-                        <button class="btn btn-deny" onclick="denyAdmin(${i})">
-                            Deny
-                        </button>
-                    </div>
-                </div>`
-            ).join("")
-            : '<p style="color:#999;">No pending admin requests</p>';
+        alert(`${username} is already verified`);
     }
 }
 
-// =========================
-// Approve / Deny Requests
-// =========================
+// Load verified users list
+function loadVerifiedUsers() {
+    const list = document.getElementById('verifiedUsersList');
+    list.innerHTML = appData.verifiedUsers.map(user => 
+        `<div class="list-item">
+            <span>✓ @${user}</span>
+            <button class="btn btn-danger" onclick="unverifyUser('${user}')">Remove</button>
+        </div>`
+    ).join('') || '<p style="color:#999;">No verified users yet</p>';
+}
 
-function approveVerify(i) {
-    if (!requireRank(["Owner", "Admin"], "approve verification requests")) return;
-
-    const req = appData.pendingVerify[i];
-    appData.verifiedUsers.push(req.username);
-    appData.pendingVerify.splice(i, 1);
+// Unverify user
+function unverifyUser(username) {
+    appData.verifiedUsers = appData.verifiedUsers.filter(u => u !== username);
     saveData();
-    loadPendingRequests();
     loadVerifiedUsers();
-    alert(`@${req.username} is now verified!`);
 }
 
-function denyVerify(i) {
-    if (!requireRank(["Owner", "Admin"], "deny verification requests")) return;
+// Feature project
+function featureProject() {
+    const id = document.getElementById('projectId').value.trim();
+    const title = document.getElementById('projectTitle').value.trim();
 
-    appData.pendingVerify.splice(i, 1);
+    if (!id || !title) {
+        alert('Please enter project ID and title');
+        return;
+    }
+
+    appData.featuredProjects.unshift({ id, title });
+    if (appData.featuredProjects.length > 6) appData.featuredProjects.pop();
     saveData();
-    loadPendingRequests();
+    document.getElementById('projectId').value = '';
+    document.getElementById('projectTitle').value = '';
+    loadFeaturedContent();
+    loadManagedFeatured();
+    alert(`✓ Project "${title}" featured!`);
 }
 
-function approveAdmin(i) {
-    if (!requireRank(["Owner"], "approve admin requests")) return;
+// Feature studio
+function featureStudio() {
+    const id = document.getElementById('studioId').value.trim();
+    const title = document.getElementById('studioTitle').value.trim();
 
-    const req = appData.pendingAdmin[i];
+    if (!id || !title) {
+        alert('Please enter studio ID and title');
+        return;
+    }
 
-    appData.adminAccounts.push({
-        username: req.username,
-        password: req.password,
-        reason: req.reason,
-        rank: req.rank || "Admin"
-    });
-
-    appData.pendingAdmin.splice(i, 1);
+    appData.featuredStudios.unshift({ id, title });
+    if (appData.featuredStudios.length > 6) appData.featuredStudios.pop();
     saveData();
-    loadPendingRequests();
-    alert(`@${req.username} is now an admin!`);
+    document.getElementById('studioId').value = '';
+    document.getElementById('studioTitle').value = '';
+    loadFeaturedContent();
+    loadManagedFeatured();
+    alert(`✓ Studio "${title}" featured!`);
 }
 
-function denyAdmin(i) {
-    if (!requireRank(["Owner"], "deny admin requests")) return;
+// Feature user
+function featureUser() {
+    const username = document.getElementById('userId').value.trim();
 
-    appData.pendingAdmin.splice(i, 1);
+    if (!username) {
+        alert('Please enter a username');
+        return;
+    }
+
+    appData.featuredUsers.unshift({ username });
+    if (appData.featuredUsers.length > 6) appData.featuredUsers.pop();
     saveData();
-    loadPendingRequests();
+    document.getElementById('userId').value = '';
+    loadFeaturedContent();
+    loadManagedFeatured();
+    alert(`✓ @${username} featured!`);
 }
 
-// =========================
-// Auto-refresh stats
-// =========================
+// Load managed featured content
+function loadManagedFeatured() {
+    const projectsDiv = document.getElementById('manageFeaturedProjects');
+    const studiosDiv = document.getElementById('manageFeaturedStudios');
+    const usersDiv = document.getElementById('manageFeaturedUsers');
 
+    projectsDiv.innerHTML = appData.featuredProjects.map((p, i) => 
+        `<div class="manage-item">
+            <span>${p.title}</span>
+            <button class="btn btn-danger" onclick="removeFeature('projects', ${i})">Remove</button>
+        </div>`
+    ).join('') || '<p style="color:#999;">No featured projects</p>';
+
+    studiosDiv.innerHTML = appData.featuredStudios.map((s, i) => 
+        `<div class="manage-item">
+            <span>${s.title}</span>
+            <button class="btn btn-danger" onclick="removeFeature('studios', ${i})">Remove</button>
+        </div>`
+    ).join('') || '<p style="color:#999;">No featured studios</p>';
+
+    usersDiv.innerHTML = appData.featuredUsers.map((u, i) => 
+        `<div class="manage-item">
+            <span>@${u.username}</span>
+            <button class="btn btn-danger" onclick="removeFeature('users', ${i})">Remove</button>
+        </div>`
+    ).join('') || '<p style="color:#999;">No featured users</p>';
+}
+
+// Remove featured item
+function removeFeature(type, index) {
+    if (type === 'projects') appData.featuredProjects.splice(index, 1);
+    else if (type === 'studios') appData.featuredStudios.splice(index, 1);
+    else if (type === 'users') appData.featuredUsers.splice(index, 1);
+    saveData();
+    loadFeaturedContent();
+    loadManagedFeatured();
+}
+
+// Switch tabs
+function switchTab(e) {
+    const tabName = e.target.getAttribute('data-tab');
+    
+    // Remove active class from all buttons and content
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to clicked button and its content
+    e.target.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+}
+
+// Session management
+function createSession() {
+    const session = {
+        username: currentUser,
+        createdAt: new Date(),
+        expiry: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hour expiry
+    };
+    sessionStorage.setItem('adminSession', JSON.stringify(session));
+}
+
+function clearSession() {
+    sessionStorage.removeItem('adminSession');
+}
+
+// Auto-refresh stats every 5 minutes
 setInterval(loadPublicStats, 5 * 60 * 1000);
-
-function renderFeaturedContent() {
-    const projectsDiv = document.getElementById("featuredProjects");
-    const studiosDiv = document.getElementById("featuredStudios");
-    const usersDiv = document.getElementById("featuredUsers");
-
-    // Projects
-    if (projectsDiv) {
-        projectsDiv.innerHTML =
-            appData.featuredProjects.map(p =>
-                `<a href="https://scratch.mit.edu/projects/${p.id}/" target="_blank" class="featured-item featured-link">
-                    <strong>${p.title}</strong>
-                    <p>ID: ${p.id}</p>
-                </a>`
-            ).join("") || `<p style="color:#999;">No featured projects yet</p>`;
-    }
-
-    // Studios
-    if (studiosDiv) {
-        studiosDiv.innerHTML =
-            appData.featuredStudios.map(s =>
-                `<a href="https://scratch.mit.edu/studios/${s.id}/" target="_blank" class="featured-item featured-link">
-                    <strong>${s.title}</strong>
-                    <p>ID: ${s.id}</p>
-                </a>`
-            ).join("") || `<p style="color:#999;">No featured studios yet</p>`;
-    }
-
-    // Users
-    if (usersDiv) {
-        usersDiv.innerHTML =
-            appData.featuredUsers.map(u =>
-                `<a href="https://scratch.mit.edu/users/${u.username}/" target="_blank" class="featured-item featured-link">
-                    <strong>@${u.username} <i class="fas fa-check-circle verified-icon"></i></strong>
-                    <p>Verified User</p>
-                </a>`
-            ).join("") || `<p style="color:#999;">No featured users yet</p>`;
-    }
-}
