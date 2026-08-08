@@ -800,3 +800,25 @@ body {
     text-decoration: none;
     font-weight: bold;
 }
+
+.featured-item {
+    background: #1e1e1e;
+    border-left: 4px solid #4da3ff;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: block;
+    text-decoration: none;
+    color: #fff;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.featured-item:hover {
+    background: #252525;
+    transform: translateY(-2px);
+}
+
+.featured-item p {
+    margin: 4px 0 0;
+    color: #ccc;
+}
