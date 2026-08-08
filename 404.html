@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+
+    <style>
+        body {
+            background: #0d0d0d;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .message {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        .sub {
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: #4da3ff;
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: background 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #3a82cc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="logo" onclick="window.location.href='https://scratch-stats.github.io'">
+        📊 Scratch Stats
+    </div>
+
+    <div class="message">404 — Page Not Found</div>
+    <div class="sub">The page you're looking for doesn't exist.</div>
+
+    <a class="btn" href="https://scratch-stats.github.io">Go Home</a>
+
+</body>
+</html>
