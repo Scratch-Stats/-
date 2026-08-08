@@ -764,3 +764,39 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #5568d3;
 }
+
+.leaderboard-section {
+    margin-top: 40px;
+}
+
+.leaderboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leaderboard-item {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.leaderboard-rank {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.leaderboard-info p {
+    margin: 0;
+    color: #ccc;
+}
+
+.leaderboard-link {
+    color: #4da3ff;
+    text-decoration: none;
+    font-weight: bold;
+}
