@@ -31,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadData();
     setupEventListeners();
     loadPublicStats();
-    loadFeaturedContent();
     loadLeaderboard();
     checkSession();
 });
@@ -221,51 +220,11 @@ function loadPublicStats() {
 }
 
 // =========================
-// Featured Content (Backend)
-// =========================
-
-async function loadFeaturedContent() {
-    try {
-        const res = await fetch(`${BACKEND}/featured`);
-        const data = await res.json();
-
-        const projectsDiv = document.getElementById("featuredProjects");
-        const studiosDiv = document.getElementById("featuredStudios");
-        const usersDiv = document.getElementById("featuredUsers");
-
-        projectsDiv.innerHTML =
-            data.featuredProjects.map(p =>
-                `<a href="https://scratch.mit.edu/projects/${p.id}/" target="_blank" class="featured-item featured-link">
-                    <strong>${p.title}</strong><p>ID: ${p.id}</p>
-                </a>`
-            ).join("") || `<p style="color:#999;">No featured projects yet</p>`;
-
-        studiosDiv.innerHTML =
-            data.featuredStudios.map(s =>
-                `<a href="https://scratch.mit.edu/studios/${s.id}/" target="_blank" class="featured-item featured-link">
-                    <strong>${s.title}</strong><p>ID: ${s.id}</p>
-                </a>`
-            ).join("") || `<p style="color:#999;">No featured studios yet</p>`;
-
-        usersDiv.innerHTML =
-            data.featuredUsers.map(u =>
-                `<a href="https://scratch.mit.edu/users/${u.username}/" target="_blank" class="featured-item featured-link">
-                    <strong>@${u.username}</strong><p>✓ Verified</p>
-                </a>`
-            ).join("") || `<p style="color:#999;">No featured users yet</p>`;
-
-    } catch (err) {
-        console.error("Featured error:", err);
-    }
-}
-
-// =========================
 // Admin Panel
 // =========================
 
 function loadAdminPanel() {
     loadVerifiedUsers();
-    loadManagedFeatured();
     loadPendingRequests();
 }
 
@@ -312,107 +271,6 @@ async function unverifyUser(username) {
     });
 
     loadVerifiedUsers();
-}
-
-// =========================
-// Feature Content (Backend)
-// =========================
-
-async function featureProject() {
-    const id = document.getElementById("projectId").value.trim();
-    const title = document.getElementById("projectTitle").value.trim();
-    if (!id || !title) return alert("Enter ID and title");
-
-    await fetch(`${BACKEND}/featured/add`, {
-        method: "POST",
-        headers: getAdminHeaders(),
-        body: JSON.stringify({ type: "projects", item: { id, title } })
-    });
-
-    loadFeaturedContent();
-    loadManagedFeatured();
-}
-
-async function featureStudio() {
-    const id = document.getElementById("studioId").value.trim();
-    const title = document.getElementById("studioTitle").value.trim();
-    if (!id || !title) return alert("Enter ID and title");
-
-    await fetch(`${BACKEND}/featured/add`, {
-        method: "POST",
-        headers: getAdminHeaders(),
-        body: JSON.stringify({ type: "studios", item: { id, title } })
-    });
-
-    loadFeaturedContent();
-    loadManagedFeatured();
-}
-
-async function featureUser() {
-    const username = document.getElementById("userId").value.trim();
-    if (!username) return alert("Enter username");
-
-    await fetch(`${BACKEND}/featured/add`, {
-        method: "POST",
-        headers: getAdminHeaders(),
-        body: JSON.stringify({ type: "users", item: { username } })
-    });
-
-    loadFeaturedContent();
-    loadManagedFeatured();
-}
-
-async function removeFeature(type, index) {
-    await fetch(`${BACKEND}/featured/remove`, {
-        method: "POST",
-        headers: getAdminHeaders(),
-        body: JSON.stringify({ type, index })
-    });
-
-    loadFeaturedContent();
-    loadManagedFeatured();
-}
-
-// =========================
-// Manage Featured
-// =========================
-
-async function loadManagedFeatured() {
-    try {
-        const res = await fetch(`${BACKEND}/featured`);
-        const data = await res.json();
-
-        const projectsDiv = document.getElementById("manageFeaturedProjects");
-        const studiosDiv = document.getElementById("manageFeaturedStudios");
-        const usersDiv = document.getElementById("manageFeaturedUsers");
-
-        projectsDiv.innerHTML =
-            data.featuredProjects.map((p, i) =>
-                `<div class="manage-item">
-                    <span>${p.title}</span>
-                    <button class="btn btn-danger" onclick="removeFeature('projects', ${i})">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No featured projects</p>`;
-
-        studiosDiv.innerHTML =
-            data.featuredStudios.map((s, i) =>
-                `<div class="manage-item">
-                    <span>${s.title}</span>
-                    <button class="btn btn-danger" onclick="removeFeature('studios', ${i})">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No featured studios</p>`;
-
-        usersDiv.innerHTML =
-            data.featuredUsers.map((u, i) =>
-                `<div class="manage-item">
-                    <span>@${u.username}</span>
-                    <button class="btn btn-danger" onclick="removeFeature('users', ${i})">Remove</button>
-                </div>`
-            ).join("") || `<p style="color:#999;">No featured users</p>`;
-
-    } catch (err) {
-        console.error("Manage featured error:", err);
-    }
 }
 
 // =========================
